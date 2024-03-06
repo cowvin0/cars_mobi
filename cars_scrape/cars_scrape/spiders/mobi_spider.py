@@ -17,5 +17,16 @@ class CarsSpider(scrapy.Spider):
 
     def start_requests(self):
         yield Request(
-                url=self.start_requests[0],
-                )
+            url=self.start_urls[0],
+            meta=dict(
+                dont_redirect=True,
+                handle_httpstatus_list=[302, 308],
+                playwright=True,
+                playwright_include_page=True,
+                playwright_page_methods={
+                    ...
+                    },
+                errback=self.errback
+            ),
+            callback=self.parse
+        )
