@@ -28,5 +28,18 @@ class CarsSpider(scrapy.Spider):
                     },
                 errback=self.errback
             ),
-            callback=self.parse
+            callback=self.parse_page
         )
+
+    async def parse_page(self, response):
+        page = respose.meta['playwright_page']
+        playwright_page_methods = response.meta['playwright_page_methods']
+
+        possible_classes = [
+            response.xpath('//a[@class="mui-style-xsroma"]/@href').getall(),
+            response.xpath('//a[@class="css-xsroma"]/@href').getall()
+        ] 
+        possible_classes = [diff_zero for diff_zero in possible_classes if len(diff_zero) != 0]
+
+        for url in possible_classes[0]:
+            yield
