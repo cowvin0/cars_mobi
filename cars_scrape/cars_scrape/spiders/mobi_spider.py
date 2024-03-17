@@ -20,13 +20,7 @@ class CarsSpider(scrapy.Spider):
             url=self.start_urls[0],
             meta=dict(
                 dont_redirect=True,
-                handle_httpstatus_list=[302, 308],
-                playwright=True,
-                playwright_include_page=True,
-                playwright_page_methods={
-                    ...
-                    },
-                errback=self.errback
+                handle_httpstatus_list=[302, 308]
             ),
             callback=self.parse_page
         )
@@ -42,4 +36,21 @@ class CarsSpider(scrapy.Spider):
         possible_classes = [diff_zero for diff_zero in possible_classes if len(diff_zero) != 0]
 
         for url in possible_classes[0]:
-            yield
+            yield Request(
+                url=url,
+                meta = dict(
+                    dont_redirect=True,
+                    handle_httpstatus_list=[302, 308],
+                    playwright=True,
+                    playwright_include_page=True,
+                    errback=self.errback
+                ),
+                callback=self.parse_auto_items
+            )
+
+    async def parse_auto_items(self, response):
+        page = response.meta['playwright_page']
+
+        await page.evaluate(r'''
+                                
+                            ''')

@@ -3,11 +3,41 @@
 # See documentation in:
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
+import warnings
+import playwright.sync_api
+import requests
+import playwright._impl
+from twisted.internet import defer
+from twisted.internet.error import (
+    ConnectError,
+    ConnectionDone,
+    ConnectionLost,
+    ConnectionRefusedError,
+    DNSLookupError,
+    TCPTimedOutError,
+    TimeoutError,
+)
+
+from twisted.web.client import ResponseFailed
+import logging
+from typing import Optional, Union
+from scrapy.exceptions import NotConfigured, ScrapyDeprecationWarning
+from scrapy.http.request import Request
+from scrapy.settings import Settings
+from scrapy.spiders import Spider
+from scrapy.utils.misc import load_object
+from scrapy.core.downloader.handlers.http11 import TunnelError
+from scrapy.utils.python import global_object_name
+from scrapy.utils.response import response_status_message
+from scrapy.http import Headers
 from scrapy import signals
+from urllib.parse import urlencode
+from random import randint
 
 # useful for handling different item types with a single interface
 from itemadapter import is_item, ItemAdapter
 
+logger = logging.getLogger(__name__)
 
 class CarsScrapeSpiderMiddleware:
     # Not all methods need to be defined. If a method is not defined,
@@ -101,3 +131,109 @@ class CarsScrapeDownloaderMiddleware:
 
     def spider_opened(self, spider):
         spider.logger.info("Spider opened: %s" % spider.name)
+
+
+class ScrapeOpsFakeBrowserHeaderAgentMiddleware:
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(crawler.settings)
+
+    def __init__(self, settings):
+        self.scrapeops_api_key = settings.get('SCRAPEOPS_API_KEY')
+        self.scrapeops_endpoint = settings.get('SCRAPEOPS_FAKE_BROWSER_HEADER_ENDPOINT', 'http://headers.scrapeops.io/v1/browser-headers?') 
+        self.scrapeops_fake_browser_headers_active = settings.get('SCRAPEOPS_FAKE_BROWSER_HEADER_ENABLED', True)
+        self.scrapeops_num_results = settings.get('SCRAPEOPS_NUM_RESULTS')
+        self.headers_list = []
+        self._get_headers_list()
+        self._scrapeops_fake_browser_headers_enabled()
+
+    def _get_headers_list(self):
+        payload = {'api_key': self.scrapeops_api_key}
+        if self.scrapeops_num_results is not None:
+            payload['num_results'] = self.scrapeops_num_results
+        response = requests.get(self.scrapeops_endpoint, params=urlencode(payload))
+        json_response = response.json()
+        self.headers_list = json_response.get('result', [])
+
+    def _get_random_browser_header(self):
+        random_index = randint(0, len(self.headers_list) - 1)
+        return self.headers_list[random_index]
+
+    def _scrapeops_fake_browser_headers_enabled(self):
+        if self.scrapeops_api_key is None or self.scrapeops_api_key == '' or self.scrapeops_fake_browser_headers_active == False:
+            self.scrapeops_fake_browser_headers_active = False
+        else:
+            self.scrapeops_fake_browser_headers_active = True
+
+    def process_request(self, request, spider):        
+        random_browser_header = self._get_random_browser_header()
+        request.headers = Headers(random_browser_header)
+
+
+
+        print('********** NEW HEADER ATTACHED **********')
+        print(request.headers)
+
+
+class RetryMiddleware:
+
+    EXCEPTIONS_TO_RETRY = (defer.TimeoutError, TimeoutError, DNSLookupError,
+                           ConnectionRefusedError, ConnectionDone, ConnectError,
+                           ConnectionLost, TCPTimedOutError, ResponseFailed,
+                           IOError, TunnelError, playwright.sync_api.TimeoutError,
+                           playwright._impl._errors.TargetClosedError)
+
+    def __init__(self, settings):
+        if not settings.getbool('RETRY_ENABLED'):
+            raise NotConfigured
+        self.max_retry_times = settings.getint('RETRY_TIMES')
+        self.retry_http_codes = set(int(x) for x in settings.getlist('RETRY_HTTP_CODES'))
+        self.priority_adjust = settings.getint('RETRY_PRIORITY_ADJUST')
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(crawler.settings)
+
+    def process_response(self, request, response, spider):
+        if request.meta.get('dont_retry', False):
+            return response
+        if response.status in self.retry_http_codes:
+            reason = response_status_message(response.status)
+            return self._retry(request, reason, spider) or response
+        return response
+
+    def process_exception(self, request, exception, spider):
+        if isinstance(exception, self.EXCEPTIONS_TO_RETRY) \
+                and not request.meta.get('dont_retry', False):
+            return self._retry(request, exception, spider)
+
+    def _retry(self, request, reason, spider):
+        retries = request.meta.get('retry_times', 0) + 1
+
+        retry_times = self.max_retry_times
+
+        if 'max_retry_times' in request.meta:
+            retry_times = request.meta['max_retry_times']
+
+        stats = spider.crawler.stats
+        if retries <= retry_times:
+            logger.debug("Retrying %(request)s (failed %(retries)d times): %(reason)s",
+                         {'request': request, 'retries': retries, 'reason': reason},
+                         extra={'spider': spider})
+            retryreq = request.copy()
+            retryreq.meta['retry_times'] = retries
+            retryreq.dont_filter = True
+            retryreq.priority = request.priority + self.priority_adjust
+
+            if isinstance(reason, Exception):
+                reason = global_object_name(reason.__class__)
+
+            stats.inc_value('retry/count')
+            stats.inc_value('retry/reason_count/%s' % reason)
+            return retryreq
+        else:
+            stats.inc_value('retry/max_reached')
+            logger.error("Gave up retrying %(request)s (failed %(retries)d times): %(reason)s",
+                         {'request': request, 'retries': retries, 'reason': reason},
+                         extra={'spider': spider})
