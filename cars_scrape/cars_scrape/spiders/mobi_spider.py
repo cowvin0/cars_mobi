@@ -52,5 +52,5 @@ class CarsSpider(scrapy.Spider):
         page = response.meta['playwright_page']
 
         await page.evaluate(r'''
-                                
+                             
                             ''')

@@ -22,9 +22,7 @@ from twisted.web.client import ResponseFailed
 import logging
 from typing import Optional, Union
 from scrapy.exceptions import NotConfigured, ScrapyDeprecationWarning
-from scrapy.http.request import Request
-from scrapy.settings import Settings
-from scrapy.spiders import Spider
+from scrapy.http.request import Request from scrapy.settings import Settings from scrapy.spiders import Spider
 from scrapy.utils.misc import load_object
 from scrapy.core.downloader.handlers.http11 import TunnelError
 from scrapy.utils.python import global_object_name
