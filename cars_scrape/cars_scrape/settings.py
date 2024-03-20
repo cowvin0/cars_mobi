@@ -61,7 +61,6 @@ DOWNLOADER_MIDDLEWARES = {
 #EXTENSIONS = {
 #    "scrapy.extensions.telnet.TelnetConsole": None,
 #}
-
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 #ITEM_PIPELINES = {
@@ -105,3 +104,7 @@ DOWNLOAD_HANDLERS = {
 
 RETRY_ENABLED = True
 RETRY_TIMES = 100
+
+PLAYWRIGHT_LAUNCH_OPTIONS = {
+    "headless": False,
+}
