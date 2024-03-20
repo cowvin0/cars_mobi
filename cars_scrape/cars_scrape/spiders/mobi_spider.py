@@ -5,7 +5,7 @@ from scrapy.http import Request
 
 class CarsSpider(scrapy.Spider):
     name = "mobi"
-    allowed_domains = ["www.mobiauto.com.br"]
+    allowed_domains = ["mobiauto.com.br"]
 
     async def errback(self, failure):
         page = failure.request.meta["playwright_page"]
@@ -20,7 +20,7 @@ class CarsSpider(scrapy.Spider):
             url=self.start_urls[0],
             meta=dict(
                 dont_redirect=True,
-                handle_httpstatus_list=[302, 308, 307]
+                handle_httpstatus_list=[302, 308]
             ),
             callback=self.parse_page
         )
@@ -36,18 +36,32 @@ class CarsSpider(scrapy.Spider):
 
         possible_classes = [diff_zero for diff_zero in possible_classes if len(diff_zero) != 0]
 
-        for url in possible_classes[0]:
-            yield Request(
-                url="https://www.mobiauto.com.br" + url,
-                meta = dict(
-                    dont_redirect=True,
-                    handle_httpstatus_list=[302, 308, 307],
-                    playwright=True,
-                    playwright_include_page=True,
-                    errback=self.errback
-                ),
-                callback=self.parse_auto_items
-            )
+        yield {"items": possible_classes[0][0]}
+
+        yield Request(
+            url="https://www.mobiauto.com.br" + possible_classes[0][0],
+            meta=dict(
+                dont_redirect=True,
+                handle_httpstatus_list=[302, 308],
+                playwright=True,
+                playwright_include_page=True,
+                errback=self.errback
+            ),
+            callback=self.parse_auto_items
+        )
+
+        # for url in possible_classes[0]:
+        #     yield Request(
+        #         url="https://www.mobiauto.com.br" + url,
+        #         meta=dict(
+        #             dont_redirect=True,
+        #             handle_httpstatus_list=[302, 308],
+        #             playwright=True,
+        #             playwright_include_page=True,
+        #             errback=self.errback
+        #         ),
+        #         callback=self.parse_auto_items
+        #     )
 
     async def parse_auto_items(self, response):
         page = response.meta['playwright_page']
@@ -59,9 +73,9 @@ class CarsSpider(scrapy.Spider):
 
         await page.wait_for_timeout(5000)
 
-        car_details = await page.evaluate(r'''
-                                          var details = document.querySelectorAll(".MuiCollapse-wrapperInner.MuiCollapse-vertical.mui-style-8atqhb");
-                                          Array.from(details).forEach(element => element.textContent);
-                                          ''')
+        car_details = await page.evaluate('''() => {
+            const details = document.querySelectorAll(".MuiCollapse-wrapperInner.MuiCollapse-vertical.mui-style-8atqhb");
+            return Array.from(details, element => element.textContent.trim());
+        }''')
 
         yield {"items": car_details}
