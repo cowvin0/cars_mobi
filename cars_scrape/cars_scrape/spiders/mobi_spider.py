@@ -51,6 +51,9 @@ class CarsSpider(scrapy.Spider):
     async def parse_auto_items(self, response):
         page = response.meta['playwright_page']
 
-        await page.evaluate(r'''
-                             
-                            ''')
+        car_options = await page.evaluate(r'''
+                                          var elements = document.querySelectorAll('.MuiAccordionSummary-content.MuiAccordionSummary-contentGutters.css-17o5nyn, .MuiAccordionSummary-content.MuiAccordionSummary-contentGutters.mui-style-17o5nyn');
+                                          Array.from(elements).forEach(element => element.click())
+                                          ''')
+
+        await
