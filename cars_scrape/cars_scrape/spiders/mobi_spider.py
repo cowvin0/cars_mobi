@@ -1,4 +1,5 @@
 import scrapy
+import re
 from scrapy.http import Request
 # from items import CarsItem
 
@@ -74,8 +75,26 @@ class CarsSpider(scrapy.Spider):
         await page.wait_for_timeout(5000)
 
         car_details = await page.evaluate('''() => {
-            const details = document.querySelectorAll(".MuiCollapse-wrapperInner.MuiCollapse-vertical.mui-style-8atqhb");
-            return Array.from(details, element => element.textContent.trim());
+            var names = document.querySelectorAll(".MuiAccordionSummary-content.Mui-expanded.MuiAccordionSummary-contentGutters.css-17o5nyn");
+            var details = document.querySelectorAll(".MuiCollapse-wrapperInner.MuiCollapse-vertical.mui-style-8atqhb");
+            names = Array.from(names).map(a => a.textContent);
+            details = Array.from(details).map(a => a.textContent);
+
+            var keywordDict = {};
+            names.forEach((key, index) => {
+                keywordDict[key] = details[index];
+            })
+
+            return keywordDict;
         }''')
+
+        # car_details = ' '.join(car_details)
+
+        all_previous_info = response.xpath('//div[@class="mui-style-1n2g6aq"]//text()').getall()
+        all_previous_info = {all_previous_info[i]: all_previous_info[i + 1] for i in range(len(all_previous_info) - 1)}
+        car_price = response.xpath('//p[@class="mui-style-h31tor"]/text()').get()
+        url = response.url
+
+        await page.close()
 
         yield {"items": car_details}
