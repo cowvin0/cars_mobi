@@ -88,8 +88,6 @@ class CarsSpider(scrapy.Spider):
             return keywordDict;
         }''')
 
-        # car_details = ' '.join(car_details)
-
         all_previous_info = response.xpath('//div[@class="mui-style-1n2g6aq"]//text()').getall()
         all_previous_info = {all_previous_info[i]: all_previous_info[i + 1] for i in range(len(all_previous_info) - 1)}
         car_price = response.xpath('//p[@class="mui-style-h31tor"]/text()').get()
