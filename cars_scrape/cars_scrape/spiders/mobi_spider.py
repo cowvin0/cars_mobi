@@ -33,7 +33,7 @@ class CarsSpider(scrapy.Spider):
         possible_classes = [
             response.xpath('//a[@class="mui-style-xsroma"]/@href').getall(),
             response.xpath('//a[@class="css-xsroma"]/@href').getall()
-            ] 
+            ]
 
         possible_classes = [diff_zero for diff_zero in possible_classes if len(diff_zero) != 0]
 
@@ -88,10 +88,31 @@ class CarsSpider(scrapy.Spider):
             return keywordDict;
         }''')
 
+        mecanica = car_details['Mecânica']
+        dimensao = car_details['Dimensão']
         all_previous_info = response.xpath('//div[@class="mui-style-1n2g6aq"]//text()').getall()
         all_previous_info = {all_previous_info[i]: all_previous_info[i + 1] for i in range(len(all_previous_info) - 1)}
         car_price = response.xpath('//p[@class="mui-style-h31tor"]/text()').get()
         url = response.url
+        motorizacao = re.search(r'Motorização([\d.]+)', mecanica)
+        carroceria = all_previous_info['Carroceria']
+        km_andado = all_previous_info['KM']
+        combustivel = all_previous_info['Combustível']
+        cambio = all_previous_info['Câmbio']
+        cor = all_previous_info['Cor']
+        ano = all_previous_info['Ano']
+        marca_carro = response.xpath('//h1[@class"mui-style-4ato1b"]//text()').getall()
+        marca_carro = marca_carro[0]
+        nome_carro = ''.join(marca_carro)
+        altura = re.search(r'Altura \(mm\)(\d+)', dimensao)
+        largura = re.search(r'Largura \(mm\)(\d+)', dimensao)
+        comprimento = re.search(r'Comprimento \(mm\)(\d+)', dimensao)
+        peso = re.search(r'Peso \(kg\)(\d+)', dimensao)
+        tanque = re.search(r'Tanque \(L\)(\d+)', dimensao)
+        entre_eixos = re.search(r'Entre-eixos \(mm\)(\d+)', dimensao)
+        porta_malas = re.search(r'Porta-Malas \(L\)(\d+)', dimensao)
+        ocupantes = re.search(r'Ocupantes(\d+)', dimensao)
+        direcao = re.search(r'Direção([A-ZÁÉÍÓÚÂÊÔÃÕÇ][a-záéíóúâêôãõç]+)', mecanica)
 
         await page.close()
 
