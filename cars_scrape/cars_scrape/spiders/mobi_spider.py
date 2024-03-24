@@ -15,10 +15,10 @@ class CarsSpider(scrapy.Spider):
 
     def __init__(self, *args, **kwargs):
         super(CarsSpider, self).__init__(*args, **kwargs)
-        self.start_urls = ["https://www.mobiauto.com.br/comprar/carros/pb-joao-pessoa"]
+        self.start_urls = ["https://www.mobiauto.com.br/comprar/carros/rn-natal"]
 
     def start_requests(self):
-        for page in range(1, 64):
+        for page in range(1, 66):
             yield Request(
                 url=self.start_urls[0] + f'/pagina-{page}',
                 meta=dict(
@@ -29,8 +29,6 @@ class CarsSpider(scrapy.Spider):
             )
 
     async def parse_page(self, response):
-        # page = response.meta['playwright_page']
-        # playwright_page_methods = response.meta['playwright_page_methods']
 
         possible_classes = [
             response.xpath('//a[@class="mui-style-xsroma"]/@href').getall(),
@@ -39,22 +37,7 @@ class CarsSpider(scrapy.Spider):
 
         possible_classes = [diff_zero for diff_zero in possible_classes if len(diff_zero) != 0]
 
-        # yield {"items": possible_classes[0][0]}
-
-        # yield Request(
-        #     url="https://www.mobiauto.com.br" + possible_classes[0][1],
-        #     meta=dict(
-        #         dont_redirect=True,
-        #         handle_httpstatus_list=[302, 308],
-        #         playwright=True,
-        #         playwright_include_page=True,
-        #         errback=self.errback
-        #     ),
-        #     callback=self.parse_auto_items
-        # )
-
         for url in possible_classes[0]:
-            time.sleep(60)
 
             yield Request(
                 url="https://www.mobiauto.com.br" + url,
@@ -93,23 +76,22 @@ class CarsSpider(scrapy.Spider):
             return keywordDict;
         }''')
 
-        await page.wait_for_timeout(5000)
+        all_previous_info = response.xpath('//div[@class="mui-style-1n2g6aq"]//text()').getall()
+        car_price = response.xpath('//p[@class="mui-style-h31tor"]/text()').get()
+        marca_carro = response.xpath('//h1[@class="mui-style-4ato1b"]//text()').getall()
 
         await page.close()
 
         mecanica = car_details['Mecânica']
         dimensao = car_details['Dimensões']
-        all_previous_info = response.xpath('//div[@class="mui-style-1n2g6aq"]//text()').getall()
         all_previous_info = {all_previous_info[i]: all_previous_info[i + 1] for i in range(len(all_previous_info) - 1)}
-        car_price = response.xpath('//p[@class="mui-style-h31tor"]/text()').get()
         url = response.url
-        carroceria = all_previous_info['Carroceria']
-        km_andado = all_previous_info['KM']
-        combustivel = all_previous_info['Combustível']
-        cambio = all_previous_info['Câmbio']
-        cor = all_previous_info['Cor']
-        ano = all_previous_info['Ano']
-        marca_carro = response.xpath('//h1[@class="mui-style-4ato1b"]//text()').getall()
+        carroceria = all_previous_info['Carroceria'] if 'Carroceria' in all_previous_info else None
+        km_andado = all_previous_info['KM'] if 'KM' in all_previous_info else None
+        combustivel = all_previous_info['Combustível'] if 'Combustível' in all_previous_info else None
+        cambio = all_previous_info['Câmbio'] if 'Câmbio' in all_previous_info else None
+        cor = all_previous_info['Cor'] if 'Cor' in all_previous_info else None
+        ano = all_previous_info['Ano'] if 'Ano' in all_previous_info else None
         nome_carro = ''.join(marca_carro)
 
         dict_list = {
@@ -147,6 +129,5 @@ class CarsSpider(scrapy.Spider):
         car_item['ano'] = ano
         car_item['marca_carro'] = marca_carro[0]
         car_item['nome_carro'] = nome_carro
-
 
         yield car_item
