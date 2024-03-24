@@ -106,5 +106,5 @@ RETRY_ENABLED = True
 RETRY_TIMES = 100
 
 PLAYWRIGHT_LAUNCH_OPTIONS = {
-    "headless": False,
+    # "headless": False,
 }
