@@ -15,10 +15,10 @@ class CarsSpider(scrapy.Spider):
 
     def __init__(self, *args, **kwargs):
         super(CarsSpider, self).__init__(*args, **kwargs)
-        self.start_urls = ["https://www.mobiauto.com.br/comprar/carros/rn-natal"]
+        self.start_urls = ["https://www.mobiauto.com.br/comprar/carros/al-maceio"]
 
     def start_requests(self):
-        for page in range(1, 66):
+        for page in range(1, 53):
             yield Request(
                 url=self.start_urls[0] + f'/pagina-{page}',
                 meta=dict(
