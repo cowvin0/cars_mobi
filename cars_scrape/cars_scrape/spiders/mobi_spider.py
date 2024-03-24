@@ -1,5 +1,6 @@
 import scrapy
 import re
+import time
 from scrapy.http import Request
 from ..items import CarsItem
 
@@ -17,14 +18,15 @@ class CarsSpider(scrapy.Spider):
         self.start_urls = ["https://www.mobiauto.com.br/comprar/carros/pb-joao-pessoa"]
 
     def start_requests(self):
-        yield Request(
-            url=self.start_urls[0],
-            meta=dict(
-                dont_redirect=True,
-                handle_httpstatus_list=[302, 308]
-            ),
-            callback=self.parse_page
-        )
+        for page in range(1, 64):
+            yield Request(
+                url=self.start_urls[0] + f'/pagina-{page}',
+                meta=dict(
+                    dont_redirect=True,
+                    handle_httpstatus_list=[302, 308]
+                ),
+                callback=self.parse_page
+            )
 
     async def parse_page(self, response):
         # page = response.meta['playwright_page']
@@ -37,32 +39,34 @@ class CarsSpider(scrapy.Spider):
 
         possible_classes = [diff_zero for diff_zero in possible_classes if len(diff_zero) != 0]
 
-        yield {"items": possible_classes[0][0]}
+        # yield {"items": possible_classes[0][0]}
 
-        yield Request(
-            url="https://www.mobiauto.com.br" + possible_classes[0][1],
-            meta=dict(
-                dont_redirect=True,
-                handle_httpstatus_list=[302, 308],
-                playwright=True,
-                playwright_include_page=True,
-                errback=self.errback
-            ),
-            callback=self.parse_auto_items
-        )
+        # yield Request(
+        #     url="https://www.mobiauto.com.br" + possible_classes[0][1],
+        #     meta=dict(
+        #         dont_redirect=True,
+        #         handle_httpstatus_list=[302, 308],
+        #         playwright=True,
+        #         playwright_include_page=True,
+        #         errback=self.errback
+        #     ),
+        #     callback=self.parse_auto_items
+        # )
 
-        # for url in possible_classes[0][0:11]:
-        #     yield Request(
-        #         url="https://www.mobiauto.com.br" + url,
-        #         meta=dict(
-        #             dont_redirect=True,
-        #             handle_httpstatus_list=[302, 308],
-        #             playwright=True,
-        #             playwright_include_page=True,
-        #             errback=self.errback
-        #         ),
-        #         callback=self.parse_auto_items
-        #     )
+        for url in possible_classes[0]:
+            time.sleep(60)
+
+            yield Request(
+                url="https://www.mobiauto.com.br" + url,
+                meta=dict(
+                    dont_redirect=True,
+                    handle_httpstatus_list=[302, 308],
+                    playwright=True,
+                    playwright_include_page=True,
+                    errback=self.errback
+                ),
+                callback=self.parse_auto_items
+            )
 
     async def parse_auto_items(self, response):
         page = response.meta['playwright_page']
@@ -89,6 +93,10 @@ class CarsSpider(scrapy.Spider):
             return keywordDict;
         }''')
 
+        await page.wait_for_timeout(5000)
+
+        await page.close()
+
         mecanica = car_details['Mecânica']
         dimensao = car_details['Dimensões']
         all_previous_info = response.xpath('//div[@class="mui-style-1n2g6aq"]//text()').getall()
@@ -103,7 +111,7 @@ class CarsSpider(scrapy.Spider):
         ano = all_previous_info['Ano']
         marca_carro = response.xpath('//h1[@class="mui-style-4ato1b"]//text()').getall()
         nome_carro = ''.join(marca_carro)
-        
+
         dict_list = {
             'velocidade_maxima': re.search(r'Velocidade máxima \(km/h\).+?/ (\d+) \(G\)', mecanica),
             'consumo': re.search(r'Consumo cidade \(km\/l\)(?:N\/C|\d+\.\d+) \(E\) \/ (\d+\.\d+) \(G\)', mecanica),
@@ -140,7 +148,5 @@ class CarsSpider(scrapy.Spider):
         car_item['marca_carro'] = marca_carro[0]
         car_item['nome_carro'] = nome_carro
 
-        await page.close()
 
         yield car_item
-        # yield {"items": car_details}
