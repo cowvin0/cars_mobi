@@ -39,30 +39,30 @@ class CarsSpider(scrapy.Spider):
 
         yield {"items": possible_classes[0][0]}
 
-        # yield Request(
-        #     url="https://www.mobiauto.com.br" + possible_classes[0][0],
-        #     meta=dict(
-        #         dont_redirect=True,
-        #         handle_httpstatus_list=[302, 308],
-        #         playwright=True,
-        #         playwright_include_page=True,
-        #         errback=self.errback
-        #     ),
-        #     callback=self.parse_auto_items
-        # )
+        yield Request(
+            url="https://www.mobiauto.com.br" + possible_classes[0][1],
+            meta=dict(
+                dont_redirect=True,
+                handle_httpstatus_list=[302, 308],
+                playwright=True,
+                playwright_include_page=True,
+                errback=self.errback
+            ),
+            callback=self.parse_auto_items
+        )
 
-        for url in possible_classes[0][0:11]:
-            yield Request(
-                url="https://www.mobiauto.com.br" + url,
-                meta=dict(
-                    dont_redirect=True,
-                    handle_httpstatus_list=[302, 308],
-                    playwright=True,
-                    playwright_include_page=True,
-                    errback=self.errback
-                ),
-                callback=self.parse_auto_items
-            )
+        # for url in possible_classes[0][0:11]:
+        #     yield Request(
+        #         url="https://www.mobiauto.com.br" + url,
+        #         meta=dict(
+        #             dont_redirect=True,
+        #             handle_httpstatus_list=[302, 308],
+        #             playwright=True,
+        #             playwright_include_page=True,
+        #             errback=self.errback
+        #         ),
+        #         callback=self.parse_auto_items
+        #     )
 
     async def parse_auto_items(self, response):
         page = response.meta['playwright_page']
@@ -105,6 +105,9 @@ class CarsSpider(scrapy.Spider):
         nome_carro = ''.join(marca_carro)
         
         dict_list = {
+            'velocidade_maxima': re.search(r'Velocidade máxima \(km/h\).+?/ (\d+) \(G\)', mecanica),
+            'consumo': re.search(r'Consumo cidade \(km\/l\)(?:N\/C|\d+\.\d+) \(E\) \/ (\d+\.\d+) \(G\)', mecanica),
+            'direcao': re.search(r'Direção([A-ZÁÉÍÓÚÂÊÔÃÕÇ][a-záéíóúâêôãõç]+)', mecanica),
             'motorizacao': re.search(r'Motorização([\d.]+)', mecanica),
             'altura': re.search(r'Altura \(mm\)(\d+)', dimensao),
             'largura': re.search(r'Largura \(mm\)(\d+)', dimensao),
@@ -114,7 +117,6 @@ class CarsSpider(scrapy.Spider):
             'entre_eixos': re.search(r'Entre-eixos \(mm\)(\d+)', dimensao),
             'porta_malas': re.search(r'Porta-Malas \(L\)(\d+)', dimensao),
             "ocupantes": re.search(r'Ocupantes(\d+)', dimensao),
-            "direcao": re.search(r'Direção([A-ZÁÉÍÓÚÂÊÔÃÕÇ][a-záéíóúâêôãõç]+)', mecanica),
         }
 
         for var_name, value in dict_list.items():
@@ -130,7 +132,7 @@ class CarsSpider(scrapy.Spider):
         car_item['car_price'] = car_price
         car_item['url'] = url
         car_item['carroceria'] = carroceria
-        car_item['km_andado'] = km_andado
+        car_item['km_andado'] = float(km_andado) if km_andado else km_andado
         car_item['combustivel'] = combustivel
         car_item['cambio'] = cambio
         car_item['cor'] = cor

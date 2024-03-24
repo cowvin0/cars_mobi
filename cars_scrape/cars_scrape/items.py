@@ -10,8 +10,10 @@ class CarsItem(scrapy.Item):
 
     car_price = scrapy.Field()
     url = scrapy.Field()
+    consumo = scrapy.Field()
     motorizacao = scrapy.Field()
     carroceria = scrapy.Field()
+    velocidade_maxima = scrapy.Field()
     km_andado = scrapy.Field()
     combustivel = scrapy.Field()
     cambio = scrapy.Field()
