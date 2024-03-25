@@ -1,6 +1,5 @@
 import scrapy
 import re
-import time
 from scrapy.http import Request
 from ..items import CarsItem
 
@@ -15,10 +14,10 @@ class CarsSpider(scrapy.Spider):
 
     def __init__(self, *args, **kwargs):
         super(CarsSpider, self).__init__(*args, **kwargs)
-        self.start_urls = ["https://www.mobiauto.com.br/comprar/carros/ma-sao-luis"]
+        self.start_urls = ["https://www.mobiauto.com.br/comprar/carros/ce-fortaleza"]
 
     def start_requests(self):
-        for page in range(1, 77):
+        for page in range(1, 147):
             yield Request(
                 url=self.start_urls[0] + f'/pagina-{page}',
                 meta=dict(
