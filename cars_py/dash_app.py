@@ -10,12 +10,29 @@ app = Dash(
      external_stylesheets=[dbc.themes.BOOTSTRAP],
      requests_pathname_prefix='/car_dash/')
 
-app.layout = html.Div([
-    html.H1(children='Title of Dash App', style={'textAlign':'center'}),
-    dcc.Dropdown(df.country.unique(), 'Canada', id='dropdown-selection'),
-    dcc.Graph(id='graph-content')
-])
+navbar = dbc.NavbarSimple(
+    children=[
+        dbc.NavItem(dbc.NavLink('Sobre', href='#')),
+        dbc.NavItem(dbc.NavLink('Total'))
+    ],
+    brand='Title of Dash App',
+    brand_href='#',
+    color='primary',
+    dark=True
+)
 
+app.layout = html.Div([
+    navbar,
+    html.Div([
+        html.H1(children='Title of Dash App', style={'textAlign': 'center'}),
+        dcc.Dropdown(
+            options=[{'label': country, 'value': country} for country in df.country.unique()],
+            value='Canada',
+            id='dropdown-selection'
+        ),
+        dcc.Graph(id='graph-content')
+    ])
+])
 
 @callback(
     Output('graph-content', 'figure'),
