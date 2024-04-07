@@ -13,9 +13,9 @@ app = Dash(
 navbar = dbc.NavbarSimple(
     children=[
         dbc.NavItem(dbc.NavLink('Sobre', href='#')),
-        dbc.NavItem(dbc.NavLink('Total'))
+        dbc.NavItem(dbc.NavLink('Análise dos carros'))
     ],
-    brand='Title of Dash App',
+    brand='Cowvin Cars',
     brand_href='#',
     color='primary',
     dark=True
