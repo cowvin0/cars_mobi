@@ -38,7 +38,7 @@ class BaseMetrics:
         return self.y - self.fitted()
 
     def _ss_error(self):
-        return (self.residuals()**2).sum()
+        return (self.residuals() ** 2).sum()
 
     def _ss_total(self):
         return (self.y**2).sum() - (
@@ -66,6 +66,20 @@ class BaseMetrics:
     def f_value(self):
         return self._mse_model() / (self.sigma() ** 2)
 
+    def _loglik(self):
+
+        return (
+            -self._n[0] * np.log(2 * np.pi) / 2
+            - self._n[0] * np.log(self.sigma())
+            - self._ss_error() / (2 * self.sigma() ** 2)
+        )
+
+    def _aic(self):
+        return -2 * (self._loglik() - self._n[1] - 1)
+
+    def _bic(self):
+        return np.log(self._n[0]) * (self._n[1] + 1) - 2 * self._loglik()
+
     def f_pvalue(self):
         return 1 - f.cdf(self.f_value(), self.df_model(), self.df_error())
 
@@ -91,9 +105,7 @@ class BaseMetrics:
         return self.X @ self.comp @ self.X.T
 
     def rstudent(self):
-        return self.residuals() / (
-            self.sigma() * np.sqrt(1 - np.diag(self._hat()))
-        )
+        return self.residuals() / (self.sigma() * np.sqrt(1 - np.diag(self._hat())))
 
     def _cook_distance(self):
         return (self.rstudent() ** 2 * np.diag(self._hat())) / (
@@ -116,10 +128,7 @@ class LinearRegression(BaseMetrics):
             )
             return preds
         else:
-            preds = (
-                X.reindex([*self._cols], axis=1).to_numpy()
-                @ self.coefficients
-            )
+            preds = X.reindex([*self._cols], axis=1).to_numpy() @ self.coefficients
             return preds
 
     def diagnostics(self, X=None):
@@ -128,7 +137,9 @@ class LinearRegression(BaseMetrics):
         else:
             fig, ax = plt.subplots(2, 2, figsize=(12, 6))
             ind = [*range(1, self._n[0] + 1)]
-            sns.scatterplot(x=self.X @ self.coefficients(), y=self.residuals(), ax=ax[0, 0])
+            sns.scatterplot(
+                x=self.X @ self.coefficients(), y=self.residuals(), ax=ax[0, 0]
+            )
             ax[0, 0].axhline(0, color="red")
             sm.qqplot(self.residuals(), line="q", ax=ax[1, 0])
             sns.scatterplot(x=ind, y=self._cook_distance(), ax=ax[0, 1])
@@ -138,4 +149,4 @@ class LinearRegression(BaseMetrics):
 X = data.drop(columns="Overall")
 y = data.Overall
 
-reg = LinearRegression(X=X, y=y, intercept=True).fit()
+reg = LinearRegression(X=X, y=y, intercept=False).fit()
