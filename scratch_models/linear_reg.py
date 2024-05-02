@@ -49,7 +49,7 @@ class BaseMetrics:
         return self._ss_total() - self._ss_error()
 
     def df_error(self):
-        return self._n[0] - self.coefficients().shape[0]
+        return self._n[0] - self._n[1]
 
     def sigma(self):
         return np.sqrt(self._ss_error() / self.df_error())
@@ -75,10 +75,10 @@ class BaseMetrics:
         )
 
     def _aic(self):
-        return -2 * (self._loglik() - self._n[1] - 1)
+        return - 2 * self._loglik() + 2 * self._n[1]
 
     def _bic(self):
-        return np.log(self._n[0]) * (self._n[1] + 1) - 2 * self._loglik()
+        return - 2 * self._loglik() + self._n[1] * np.log(self._n[0])
 
     def f_pvalue(self):
         return 1 - f.cdf(self.f_value(), self.df_model(), self.df_error())
@@ -149,4 +149,4 @@ class LinearRegression(BaseMetrics):
 X = data.drop(columns="Overall")
 y = data.Overall
 
-reg = LinearRegression(X=X, y=y, intercept=False).fit()
+reg = LinearRegression(X=X, y=y, intercept=True).fit()
