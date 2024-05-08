@@ -245,9 +245,6 @@ class LinearRegression(BaseMetrics):
     def __init__(self, X, y, intercept=True):
         super().__init__(X, y, intercept)
 
-    def fit(self):
-        return self
-
     def predict(self, X):
         if self.intercept:
             preds = (
@@ -310,4 +307,4 @@ class LinearRegression(BaseMetrics):
 X = data.drop(columns="Overall")
 y = data.Overall
 
-reg = LinearRegression(X=X, y=y, intercept=True).fit()
+reg = LinearRegression(X=X, y=y, intercept=True)
