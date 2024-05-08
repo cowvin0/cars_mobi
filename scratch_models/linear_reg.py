@@ -1,13 +1,13 @@
 import numpy as np
 import pandas as pd
-import seaborn as sns 
+import seaborn as sns
 import statsmodels.api as sm
 import scipy.stats as st
 import matplotlib.pyplot as plt
 
 data = (
-    pd.read_csv( "https://raw.githubusercontent.com/m-clark/generalized-additive-models/master/data/pisasci2006.csv")
-    .drop(columns="Country") .dropna() .reset_index(drop=True))
+    pd.read_csv("https://raw.githubusercontent.com/m-clark/generalized-additive-models/master/data/pisasci2006.csv")
+    .drop(columns="Country").dropna().reset_index(drop=True))
 
 
 class BaseMetrics:
