@@ -12,13 +12,12 @@ data = (
 
 class BaseMetrics:
     def __init__(self, X, y, intercept):
-        dum = pd.get_dummies(X)
         if intercept:
-            self.X = np.insert(dum, 0, 1, axis=1)
-            self._cols = dum.columns.insert(0, "Intercept")
+            self.X = np.insert(X, 0, 1, axis=1)
+            self._cols = X.columns.insert(0, "Intercept")
         else:
-            self.X = dum.to_numpy()
-            self._cols = dum.columns
+            self.X = X.to_numpy()
+            self._cols = X.columns
 
         self.intercept = intercept
         self._n = self.X.shape
@@ -221,20 +220,25 @@ class BaseMetrics:
             )
         print(some_star)
 
-        tests = self._some_sup_tests(**kwargs)
-        some_stats_left1 = [
-            ("Norm (Statistic):", tests["Normality"][0]),
-            ("Norm (p-value):", tests["Normality"][1]),
-            ("Het (Satatistic):", tests["heteroscedasticity"][0]),
-            ("Het (p-value)", tests["heteroscedasticity"][1]),
-        ]
+        if self.intercept:
+            tests = self._some_sup_tests(**kwargs)
+            if isinstance(tests["Normality"][1], np.ndarray):
+                normp = len(tests["Normality"][1])
+            else:
+                normp = 0
 
-        for i in range(len(some_stats_left1)):
-            left_vals1 = some_stats_left1[i][0]
-            left_vals2 = some_stats_left1[i][1]
-            diff_left = 39 - len(left_vals1)
-            print(f"{left_vals1} {left_vals2:>{diff_left}.4f}")
+            some_stats_left1 = [
+                ("Norm (Statistic):", tests["Normality"][0]),
+                ("Norm (p-value):", tests["Normality"][1] if normp == 0 else tests["Normality"][1][0]),
+                ("Het (Statistic):", tests["heteroscedasticity"][0]),
+                ("Het (p-value)", tests["heteroscedasticity"][1]),
+            ]
 
+            for i in range(len(some_stats_left1)):
+                left_vals1 = some_stats_left1[i][0]
+                left_vals2 = some_stats_left1[i][1]
+                diff_left = 39 - len(left_vals1)
+                print(f"{left_vals1} {left_vals2:>{diff_left}.4f}")
 
 
 class LinearRegression(BaseMetrics):
@@ -247,18 +251,18 @@ class LinearRegression(BaseMetrics):
     def predict(self, X):
         if self.intercept:
             preds = (
-                X.reindex(["C", *self._cols], axis=1).assign(C=1).to_numpy()
+                X.assign(Intercept=1).reindex([*self._cols], axis=1).to_numpy()
                 @ self.coefficients()
             )
-            return preds
         else:
-            preds = X.reindex([*self._cols], axis=1).to_numpy() @ self.coefficients
-            return preds
+            preds = X.reindex([*self._cols], axis=1).to_numpy() @ self.coefficients()
+
+        return preds
 
     def vis_normal(self, **kwargs):
         _, ax = plt.subplots(ncols=2, figsize=(12, 6))
         residuals = self._get_residuals(**kwargs)
-        x = np.linspace(np.min(residuals), np.max(residuals), 1000)
+        x = np.linspace(np.min(residuals), np.max(residuals), self._n[0])
         y = st.norm.pdf(x, np.mean(residuals), np.std(residuals))
         sm.qqplot(residuals, line="q", ax=ax[0])
         sns.kdeplot(x=residuals, ax=ax[1])
@@ -282,7 +286,7 @@ class LinearRegression(BaseMetrics):
         ).ax.axline(xy1=(0, 0), slope=0, color="gray", alpha=0.4, dashes=(2, 2))
 
     def vis_anomalies(self, significance=0.5, **kwargs):
-        fig, ax = plt.subplots(ncols=2, figsize=(12, 6))
+        _, ax = plt.subplots(ncols=2, figsize=(12, 6))
         h = np.diag(self._hat())
         residuals = self._get_residuals(which="studentized")
         sns.scatterplot(x=self.fitted(), y=h, ax=ax[0], **kwargs)
@@ -301,20 +305,6 @@ class LinearRegression(BaseMetrics):
         ax[1].axline(xy1=(0, li_cook), slope=0, color="gray", dashes=(2, 2))
         ax[1].set_xlabel("Fitted values")
         ax[1].set_ylabel("Di")
-
-    def diagnostics(self, X=None):
-        if X:
-            pass
-        else:
-            fig, ax = plt.subplots(2, 2, figsize=(12, 6))
-            ind = [*range(1, self._n[0] + 1)]
-            sns.scatterplot(
-                x=self.X @ self.coefficients(), y=self.residuals(), ax=ax[0, 0]
-            )
-            ax[0, 0].axhline(0, color="red")
-            sm.qqplot(self.residuals(), line="q", ax=ax[1, 0])
-            sns.scatterplot(x=ind, y=self._cook_distance(), ax=ax[0, 1])
-            sns.scatterplot(x=ind, y=np.diag(self._hat()), ax=ax[1, 1])
 
 
 X = data.drop(columns="Overall")
