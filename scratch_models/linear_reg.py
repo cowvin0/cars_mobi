@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
-import seaborn as sns import statsmodels.api as sm
+import seaborn as sns 
+import statsmodels.api as sm
 import scipy.stats as st
 import matplotlib.pyplot as plt
 
@@ -11,12 +12,13 @@ data = (
 
 class BaseMetrics:
     def __init__(self, X, y, intercept):
+        dum = pd.get_dummies(X)
         if intercept:
-            self.X = np.insert(X, 0, 1, axis=1)
-            self._cols = X.columns.insert(0, "Intercept")
+            self.X = np.insert(dum, 0, 1, axis=1)
+            self._cols = dum.columns.insert(0, "Intercept")
         else:
-            self.X = X.to_numpy()
-            self._cols = X.columns
+            self.X = dum.to_numpy()
+            self._cols = dum.columns
 
         self.intercept = intercept
         self._n = self.X.shape
