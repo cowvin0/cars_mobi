@@ -143,7 +143,7 @@ Here's an example:
 
 
 ```python
-reg.summary(**dict(test_norm="anderson", test_het="gold"))
+reg.summary(test_norm="anderson", test_het="gold")
 ```
 
                                     LinearRegression                                
@@ -188,7 +188,7 @@ reg.vis_normal()
 
 
 ```python
-reg.vis_anomalies()
+reg.vis_linear()
 ```
 
 
@@ -199,7 +199,7 @@ reg.vis_anomalies()
 
 
 ```python
-reg.vis_linear()
+reg.vis_homo()
 ```
 
 
@@ -210,7 +210,7 @@ reg.vis_linear()
 
 
 ```python
-reg.vis_homo()
+reg.vis_arr()
 ```
 
 
@@ -221,22 +221,11 @@ reg.vis_homo()
 
 
 ```python
-reg.vis_arr()
-```
-
-
-    
-![png](README_files/README_18_0.png)
-    
-
-
-
-```python
 reg.vis_anomalies()
 ```
 
 
     
-![png](README_files/README_19_0.png)
+![png](README_files/README_18_0.png)
     
 
