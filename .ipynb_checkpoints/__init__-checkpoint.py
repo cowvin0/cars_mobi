@@ -1,1 +1,0 @@
-from scratch_models import *
