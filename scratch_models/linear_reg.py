@@ -1,18 +1,12 @@
 import numpy as np
 import pandas as pd
-import seaborn as sns
-import statsmodels.api as sm
+import seaborn as sns import statsmodels.api as sm
 import scipy.stats as st
 import matplotlib.pyplot as plt
 
 data = (
-    pd.read_csv(
-        "https://raw.githubusercontent.com/m-clark/generalized-additive-models/master/data/pisasci2006.csv"
-    )
-    .drop(columns="Country")
-    .dropna()
-    .reset_index(drop=True)
-)
+    pd.read_csv( "https://raw.githubusercontent.com/m-clark/generalized-additive-models/master/data/pisasci2006.csv")
+    .drop(columns="Country") .dropna() .reset_index(drop=True))
 
 
 class BaseMetrics:
@@ -153,7 +147,7 @@ class BaseMetrics:
 
         return {"Normality": normality[0:2], "heteroscedasticity": het[0:2]}
 
-    def summary(self, significance=0.5):
+    def summary(self, **kwargs):
 
         some_stats_left = [
             ("Dep. Variable:", self._ycol),
@@ -190,27 +184,15 @@ class BaseMetrics:
                 print(f"{left_vals1} {left_vals2:>{diff_left}.3f}", string_right)
 
         print(some_star)
-        ic = self._coefficients_ic(significance)
-        # some_middle_info = [
-        #     ("", self._cols),
-        #     ("coef", self.coefficients()),
-        #     ("std err", self._coefficients_var()),
-        #     ("t", self.t_value()),
-        #     ("P>|t|", self.t_pvalue()),
-        #     (f"[{significance / 2}", ic[0]),
-        #     (f"{1 - significance / 2}]", ic[1]),
-        # ]
-
-        # for i in range(len(some_middle_info)):
-        #         print(
-        #             some_middle_info[0]
-        #         )
-        #         print(f"{left_vals1} {left_vals2:>{diff_left}}", string_right)
-        #     pass
 
         print(
             " " * 20
-            + f"{'coef':<9} {'std err':<10} {'t':<10} {'P>|t|':<10} {'[0.025':<10} {'0.975]':<10}"
+            + f"{'coef':<9} "
+            + f"{'std err':<10} "
+            + f"{'t':<10} "
+            + f"{'P>|t|':<10} "
+            + f"{'[0.025':<10} "
+            + f"{'0.975]':<10}"
         )
 
         print("-" * 80)
@@ -227,8 +209,30 @@ class BaseMetrics:
                 else f"{p_val:.3f}" if p_val >= 1e-3 else f"{p_val:.2e}"
             )
             print(
-                f"{self._cols[i][0:16]:<18} {coef:<10.4f} {std_err:<10.3f} {t_val:<10.3f} {p_val_formatted:<10} {interval_low:<10.3f} {interval_high:<10.3f}"
+                f"{self._cols[i][0:16]:<18} "
+                f"{coef:<10.4f} "
+                f"{std_err:<10.3f} "
+                f"{t_val:<10.3f} "
+                f"{p_val_formatted:<10} "
+                f"{interval_low:<10.3f} "
+                f"{interval_high:<10.3f}"
             )
+        print(some_star)
+
+        tests = self._some_sup_tests(**kwargs)
+        some_stats_left1 = [
+            ("Norm (Statistic):", tests["Normality"][0]),
+            ("Norm (p-value):", tests["Normality"][1]),
+            ("Het (Satatistic):", tests["heteroscedasticity"][0]),
+            ("Het (p-value)", tests["heteroscedasticity"][1]),
+        ]
+
+        for i in range(len(some_stats_left1)):
+            left_vals1 = some_stats_left1[i][0]
+            left_vals2 = some_stats_left1[i][1]
+            diff_left = 39 - len(left_vals1)
+            print(f"{left_vals1} {left_vals2:>{diff_left}.4f}")
+
 
 
 class LinearRegression(BaseMetrics):
