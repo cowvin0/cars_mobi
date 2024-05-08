@@ -23,7 +23,7 @@ data = (
 X = data.drop(columns="Overall")
 y = data.Overall
 
-reg = linear_reg.LinearRegression(X=X, y=y, intercept=True).fit()
+reg = linear_reg.LinearRegression(X=X, y=y, intercept=True)
 reg.summary()
 ```
 
